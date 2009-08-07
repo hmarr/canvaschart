@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <title>CanvasChart Demo</title>
+        <script type="text/javascript" src="canvaschart.js"></script>
+        <script type="text/javascript">
+            window.onload = function() {
+                window.data = [0.23, 0.3, 0.5, 0.88, 0.74, 0.8, 0.5, 0.3, 0.4, 
+                               0.3, 0.25, 0.7, 0.8, 0.9, 0.6];
+                var canvas = document.getElementById('chart');
+                window.chart = new LineChart(canvas, 'cubic');
+                window.chart.setData(window.data);
+                setInterval(updateData, 1000);
+            };
+
+            function updateData() {
+                var newData = window.data.slice();
+                newData.shift();
+                newData.push(Math.random());
+                window.chart.setData(newData);
+                window.data = newData;
+            }
+        </script>
+        <style type="text/css">
+            #chart {
+                border: 1px solid #666;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="chart" width="800" height="360"></canvas>
+    </body>
+</html>
