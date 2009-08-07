@@ -16,20 +16,28 @@
                 });
                 window.chart.setData(window.data);
                 document.getElementById('startAnimation').onclick = function() {
-                    if (!window.animationInterval)
+                    if (!window.animationInterval) {
                         window.animationInterval = setInterval(updateData, 1000);
+                    }
                 };
                 document.getElementById('stopAnimation').onclick = function() {
-                    if (window.animationInterval)
+                    if (window.animationInterval) {
                         clearInterval(window.animationInterval);
+                        window.animationInterval = null;
+                    }
                 };
             };
 
             function updateData() {
                 var newData = window.data.slice();
                 newData.shift();
-                newData.push(Math.random());
-                window.chart.setData(newData, 300, 'linear');
+                //newData.push(Math.random());
+                newData.push(Math.cos(new Date().getSeconds()) * 0.5 + 0.5);
+                if (document.getElementById('morphValues').checked) {
+                    window.chart.setData(newData, 2400, 'cubic');
+                } else {
+                    window.chart.setData(newData);
+                }
                 window.data = newData;
             }
         </script>
@@ -53,6 +61,12 @@
             <br />
             <input type="button" id="startAnimation" value="Start Animation" />
             <input type="button" id="stopAnimation" value="Stop Animation" />
+            <br />
+            <br />
+            <label for="morphValues">
+                <input type="checkbox" id="morphValues" name="morphValues" />
+                Morph values
+            </label>
         </div>
     </body>
 </html>

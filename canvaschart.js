@@ -19,7 +19,8 @@ LineChart = function(canvas, options) {
                             options.pointStrokeWidth;
     this.pointFill = options.pointFill || null;
     this.data = new Array;
-    this.animationFrameInterval = 20;
+    this.animationFps = 30;
+    this.animationFrameInterval = 1000 / this.animationFps;
 };
 
 LineChart.prototype = {
@@ -119,6 +120,9 @@ LineChart.prototype = {
     // linear). If an animation is used, the new data must have the same 
     // number of values as the current data.
     setData: function(data, animationTime, tweenFunc) {
+        if (this.animation) {
+            clearTimeout(this.animation.timeoutId);
+        }
         if (animationTime) {
             this._morphAnimateTo(data, animationTime, tweenFunc);
         } else {
@@ -129,44 +133,52 @@ LineChart.prototype = {
 
     // Internal method used to kick off the data animation
     _morphAnimateTo: function(newData, time, tweenFunc) {
+        var currentTime = new Date().getTime();
         this.animation = {
             startData: this.data,
             endData: newData,
             time: time,
-            numFrames: Math.floor(time / this.animationFrameInterval),
             tweenFunc: tweenFunc || 'cubic',
             frame: 0,
+            startTime: currentTime,
+            endTime: currentTime + time,
         };
         var _self = this;
-        this.animation.intervalId = setInterval(function() {
+        this.animation.timeoutId = setTimeout(function() {
             _self._morphAnimationStep();
         }, this.animationFrameInterval);
     },
 
     // Internal method called at an interval to update an animation
     _morphAnimationStep: function() {
+        var currentTime = new Date().getTime();
         var newData = new Array;
         var animation = this.animation;
         var startData = animation.startData;
         var endData = animation.endData;
-        var progress = animation.frame / animation.numFrames;
+        var progress = (currentTime - animation.startTime) / animation.time;
+        progress = Math.min(progress, 1.0);
         var tweenFunc = animation.tweenFunc;
+
+        var diffMult = progress;
+        if (tweenFunc == 'quadratic') {
+            diffMult = -progress * (progress - 2);
+        } else if (tweenFunc == 'cubic') {
+            diffMult = (Math.pow(progress - 1, 3) + 1);
+        }
         for (var i = 0; i < startData.length; i++) {
             var diff = endData[i] - startData[i];
-            if (tweenFunc == 'quadratic') {
-                newData[i] = -diff * progress * (progress - 2) + startData[i];
-            } else if (tweenFunc == 'cubic') {
-                newData[i] = (diff * (Math.pow(progress - 1, 3) + 1) + 
-                              startData[i]);
-            } else {
-                newData[i] = startData[i] + diff * progress;
-            }
+            newData[i] = diffMult * diff + startData[i];
         }
         this.data = newData;
         this.draw();
         this.animation.frame++;
-        if (this.animation.frame >= animation.numFrames) {
-            clearInterval(animation.intervalId);
+        if (progress < 1.0) {
+            var _self = this;
+            var stepTime = new Date().getTime() - currentTime;
+            this.animation.timeoutId = setTimeout(function() {
+                _self._morphAnimationStep();
+            }, Math.min(this.animationFrameInterval - stepTime, 10));
         }
     },
 };
